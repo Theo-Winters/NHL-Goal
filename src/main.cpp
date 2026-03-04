@@ -84,12 +84,12 @@ void loop() {
     newScore = GetScore(gameResult, teamLocation);
     if (newScore == OldScore){
       //Delay to reduce API calls.
-      delay(500);
+      delay(5000);
       continue;
     } else if(newScore > OldScore){
       //We scored. Time to react.
       //TODO: Add variable wait time to account for stream delay. Add input on website to change the amount of time.
-      delay(55000);
+      delay(50000);
       Serial.println("Score Changed!");
       Serial.print(GetTimeRemaning(gameResult));
       Score(1);
