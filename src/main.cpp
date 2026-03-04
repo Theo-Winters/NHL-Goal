@@ -1,13 +1,12 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <HTTPClient.h>
-#include <ArduinoJson.h>
 #include <NHL_API.h>
 
 
+
 // WIFI CREDENTIALS
-const char* ssid = "<YOUR WIFI SSID>";
-const char* password = "<YOUR WIFI PASSWORD>";
+const char* ssid = "IFoundYourFetlifePage";
+const char* password = "CalorieAcceptorSpaces835";
 
 //Hockey Constants
 String GameID, teamLocation;
@@ -90,6 +89,9 @@ void loop() {
     } else if(newScore > OldScore){
       //We scored. Time to react.
       //TODO: Add variable wait time to account for stream delay. Add input on website to change the amount of time.
+      delay(55000);
+      Serial.println("Score Changed!");
+      Serial.print(GetTimeRemaning(gameResult));
       Score(1);
     }
     //Set this just in case a goal was scored, and then revoked.
@@ -102,7 +104,6 @@ void loop() {
 }
 
 void Score(int flashAmount){
-      Serial.println("Score Changed!");
       for(int i = 0; i < flashAmount; i++){
         digitalWrite(RedLED, HIGH);
         delay(5000);

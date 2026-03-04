@@ -1,14 +1,10 @@
 #include "NHL_API.h"
-#include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
-/*
-//TODO:Merge with CheckGameStats
+
+
 //Return the weekly schedule for specified team. Checks using today's date.
- String today = sprintf(DateURL, "%04d-%02d-%02d", timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday - 1); 
- CheckSchedule(String(today));
- */
 String checkSchedule(String DateURL, String Team){
   String GameIDURL = "https://api-web.nhle.com/v1/club-schedule/"+ Team +"/week/" + DateURL;
   // Serial.print(GameIDURL);
@@ -32,7 +28,7 @@ int timeTilGame(String result){
   for (JsonObject game : doc["games"].as<JsonArray>()) {
     //Check for the upcoming game.
     const String gameState = game["gameState"].as<String>();
-    if(gameState =="LIVE"){
+    if(gameState == "LIVE" || gameState == "CRIT"){
       return 0;
     } else if (gameState == "FUT"){
       //Get game time.
@@ -74,7 +70,7 @@ String FindGameID(String result) {
   for (JsonObject game : doc["games"].as<JsonArray>()) {
     //Check for the live game.
     const String gameState = game["gameState"].as<String>();
-    if (gameState == "LIVE")
+    if (gameState == "LIVE"|| gameState == "CRIT")
     {
       //Set game ID variable.
       GameID = game["id"].as<String>();
@@ -120,7 +116,7 @@ String checkGameStats(String GameID){
 int GetScore(String result, String teamLocation) {
   JsonDocument doc;
   deserializeJson(doc, result);
-  if(doc["gameState"] == "LIVE"){
+  if(doc["gameState"] == "LIVE" || doc["gameState"] == "CRIT"){
     return doc[teamLocation]["score"] ? doc[teamLocation]["score"].as<int>() : 0;
   } else {
     Serial.print("Game has finished.");
@@ -135,7 +131,7 @@ int GetScore(String result, String teamLocation) {
 String GetTimeRemaning(String result) {
   JsonDocument doc;
   deserializeJson(doc, result);
-  if(doc["gameState"] == "LIVE"){
+  if(doc["gameState"] == "LIVE" || doc["gameState"] == "CRIT"){
     String periodTimeRemaining = doc["clock"]["timeRemaining"].as<String>();
     String PeriodNumber = doc["periodDescriptor"]["number"].as<String>();
     return "Period " + PeriodNumber + "\n Time Remaining: " + periodTimeRemaining;
