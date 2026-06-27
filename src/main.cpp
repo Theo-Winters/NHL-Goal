@@ -5,8 +5,8 @@
 
 
 // WIFI CREDENTIALS
-const char* ssid = "IFoundYourFetlifePage";
-const char* password = "CalorieAcceptorSpaces835";
+const char* ssid = "Underground_AI_Data_Center";
+const char* password = "yourmomst!ts";
 
 //Hockey Constants
 String GameID, teamLocation;
