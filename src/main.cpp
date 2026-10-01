@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <NHL_API.h>
-
+#include <stdio.h>
+#include <time.h>
 
 
 // WIFI CREDENTIALS
@@ -55,8 +56,11 @@ void setup() {
 
 void loop() {
   //Check the schedule for the week, passing along today's date to prevent dealing with redirecting.
-  char DateURL[10];
-  int today = sprintf(DateURL, "%04d-%02d-%02d", timeinfo.tm_year + 1900, timeinfo.tm_mon + 1, timeinfo.tm_mday - 1);
+  time_t raw_time = mktime(&timeinfo);
+  raw_time -= 86400; 
+  struct tm *yesterday = localtime(&raw_time);
+  char DateURL[11];
+  sprintf(DateURL, "%04d-%02d-%02d", yesterday->tm_year + 1900, yesterday->tm_mon + 1, yesterday->tm_mday);
   String scheduleResult = checkSchedule(String(DateURL), Team);
   //Check how long until the next game.
   int timeTilNextGame = timeTilGame(scheduleResult);
