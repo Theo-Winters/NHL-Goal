@@ -3,9 +3,6 @@
 #include <NHL_API.h>
 #include <stdio.h>
 #include <time.h>
-#include <BluetoothSerial.h>
-
-BluetoothSerial SerialBT;
 
 // WIFI CREDENTIALS
 const char* ssid = "Underground_AI_Data_Center";
