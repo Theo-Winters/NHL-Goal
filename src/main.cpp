@@ -32,34 +32,33 @@ void Score(int flashAmount);
 void setup() {
   //Start Serial Monitor and wait a few seconds to allow connection
   Serial.begin(115200);
-  SerialBT.begin("NHL-Goal-Light"); // Bluetooth Classic device name
   pinMode(RedLED, OUTPUT);
   delay(3000);
 
   //Connect to WiFi
   WiFi.begin(ssid, password, 6);
-  SerialBT.print("Connecting to WiFi");
+  Serial.print("Connecting to WiFi");
   int attempts = 0;
   while (WiFi.status() != WL_CONNECTED) {
     if (attempts > 20){
-      SerialBT.println("Failed to connect to WiFi. Restarting.");
+      Serial.println("Failed to connect to WiFi. Restarting.");
       ESP.restart();
     }
     delay(500);
-    SerialBT.print(".");
+    Serial.print(".");
     attempts++;
   }
-  SerialBT.print("\nConnected! IP=");
-  SerialBT.println(WiFi.localIP());
+  Serial.print("\nConnected! IP=");
+  Serial.println(WiFi.localIP());
 
   //Initialize time
   configTime(UTC_OFFSET, UTC_OFFSET_DST, NTP_SERVER);
   if (!getLocalTime(&timeinfo)) {
-    SerialBT.println("Failed to obtain time. Restarting.");
+    Serial.println("Failed to obtain time. Restarting.");
     ESP.restart();
     return;
   }
-  SerialBT.println("Time Set!");
+  Serial.println("Time Set!");
   OldScore = 0;
 }
 
@@ -80,7 +79,7 @@ void loop() {
   //Set the team's location to ensure you're watching to correct score.
   teamLocation = FindTeamLocation(Team, GameID);
   if(!GameID || !teamLocation){
-    SerialBT.print("Something fucked up");
+    Serial.print("Something fucked up");
     return;
   }
   //Initialize newScore variable.
@@ -97,8 +96,8 @@ void loop() {
       //We scored. Time to react.
       //TODO: Add variable wait time to account for stream delay. Add input on website to change the amount of time.
       delay(StreamOffset);
-      SerialBT.println("Score Changed!");
-      SerialBT.print(GetTimeRemaning(GameID));
+      Serial.println("Score Changed!");
+      Serial.print(GetTimeRemaning(GameID));
       Score(1);
     }
     //Set this just in case a goal was scored, and then revoked.
