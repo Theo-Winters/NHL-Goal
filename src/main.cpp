@@ -3,18 +3,21 @@
 #include <NHL_API.h>
 #include <stdio.h>
 #include <time.h>
+#include <BluetoothSerial.h>
 
+BluetoothSerial SerialBT;
 
 // WIFI CREDENTIALS
 const char* ssid = "Underground_AI_Data_Center";
 const char* password = "yourmomst!ts";
+
 
 //Hockey Constants
 String GameID, teamLocation;
 const int RedLED = 5;
 int OldScore;
 String Team = "COL";
-
+int StreamOffset = 50000;
 
 //Time Constants
 const char* NTP_SERVER = "pool.ntp.org";
@@ -22,35 +25,41 @@ int UTC_OFFSET = 0;
 int UTC_OFFSET_DST = 0;
 struct tm timeinfo;
 
-
 //Function declarations.
 void Score(int flashAmount);
-void sendHTML();
 
 //Setup Function
 void setup() {
   //Start Serial Monitor and wait a few seconds to allow connection
   Serial.begin(115200);
+  SerialBT.begin("NHL-Goal-Light"); // Bluetooth Classic device name
   pinMode(RedLED, OUTPUT);
   delay(3000);
 
   //Connect to WiFi
   WiFi.begin(ssid, password, 6);
-  Serial.print("Connecting to WiFi");
+  SerialBT.print("Connecting to WiFi");
+  int attempts = 0;
   while (WiFi.status() != WL_CONNECTED) {
-    delay(100);
-    Serial.print(".");
+    if (attempts > 20){
+      SerialBT.println("Failed to connect to WiFi. Restarting.");
+      ESP.restart();
+    }
+    delay(500);
+    SerialBT.print(".");
+    attempts++;
   }
-  Serial.print("\nConnected! IP=");
-  Serial.println(WiFi.localIP());
+  SerialBT.print("\nConnected! IP=");
+  SerialBT.println(WiFi.localIP());
 
   //Initialize time
   configTime(UTC_OFFSET, UTC_OFFSET_DST, NTP_SERVER);
   if (!getLocalTime(&timeinfo)) {
-    Serial.println("Failed to obtain time");
+    SerialBT.println("Failed to obtain time. Restarting.");
+    ESP.restart();
     return;
   }
-  Serial.println("Time Set!");
+  SerialBT.println("Time Set!");
   OldScore = 0;
 }
 
@@ -61,41 +70,35 @@ void loop() {
   struct tm *yesterday = localtime(&raw_time);
   char DateURL[11];
   sprintf(DateURL, "%04d-%02d-%02d", yesterday->tm_year + 1900, yesterday->tm_mon + 1, yesterday->tm_mday);
-  String scheduleResult = checkSchedule(String(DateURL), Team);
-  //Check how long until the next game.
-  int timeTilNextGame = timeTilGame(scheduleResult);
+  int timeTilNextGame = timeTilGame(DateURL, Team);
   if (timeTilNextGame > 0){
     delay(timeTilNextGame);
     return;
   }
   //If there's a game live now, find it's ID to pull the game's boxscore
-  GameID = FindGameID(scheduleResult);
-  String gameResult = checkGameStats(GameID);
+  GameID = FindGameID(DateURL, Team);
   //Set the team's location to ensure you're watching to correct score.
-  teamLocation = FindTeamLocation(gameResult, Team);
+  teamLocation = FindTeamLocation(Team, GameID);
   if(!GameID || !teamLocation){
-    Serial.print("Something fucked up");
+    SerialBT.print("Something fucked up");
     return;
   }
-  //Initialize newScore variable. May as well populate it using the same API call we used to get the team's location.
-  int newScore = GetScore(gameResult, teamLocation);
+  //Initialize newScore variable.
+  int newScore = GetScore(GameID, teamLocation);
 
   //IT'S HOCKEY TIME. Watch the score and react when needed. GetScore() will return -1 when the game is over.
   while (newScore != -1){
-    //Call the API
-    gameResult = checkGameStats(GameID);
-    //Set the score variable.
-    newScore = GetScore(gameResult, teamLocation);
+    newScore = GetScore(GameID, teamLocation);
     if (newScore == OldScore){
       //Delay to reduce API calls.
-      delay(5000);
+      delay(1000);
       continue;
     } else if(newScore > OldScore){
       //We scored. Time to react.
       //TODO: Add variable wait time to account for stream delay. Add input on website to change the amount of time.
-      delay(50000);
-      Serial.println("Score Changed!");
-      Serial.print(GetTimeRemaning(gameResult));
+      delay(StreamOffset);
+      SerialBT.println("Score Changed!");
+      SerialBT.print(GetTimeRemaning(GameID));
       Score(1);
     }
     //Set this just in case a goal was scored, and then revoked.
@@ -115,23 +118,4 @@ void Score(int flashAmount){
       }
       //TODO: Add buzzer or other notification method.
       //TODO: investigate spinning light.
-}
-
-void sendHTML(){
-  // server.send(200, "text/html",
-  //   "<!DOCTYPE html>"
-  //   "<html>"
-  //   "<body>"
-  //   "<h2>ESP32 LED</h2>"
-  //   "<p><a href='/on'>ON</a></p>"
-  //   "<p><a href='/off'>OFF</a></p>"
-  //   // "<p>Status: " + String(Team) + "</p>"
-  //   "</body>"
-  //   "</html>"
-  // );
-  //palceholder for future configuration page.
-  //If no wifi credentials are stored, host a configuration page.
-  //Add input fields for wifi ssid and password.
-  //add input fields for team selection.
-  //add debugging information, such as next game time, current score, etc.
 }
