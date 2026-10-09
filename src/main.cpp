@@ -3,12 +3,15 @@
 #include <NHL_API.h>
 #include <stdio.h>
 #include <time.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include <WebSerial.h>
 
 
 // WIFI CREDENTIALS
 const char* ssid = "Underground_AI_Data_Center";
 const char* password = "yourmomst!ts";
-
+AsyncWebServer server(80);
 
 //Hockey Constants
 String GameID, teamLocation;
@@ -16,7 +19,7 @@ const int RedLED = 5;
 int OldScore;
 int newScore;
 String Team = "COL";
-int StreamOffset = 80000;
+int StreamOffset = 50000;
 
 //Time Constants
 const char* NTP_SERVER = "pool.ntp.org";
@@ -26,6 +29,7 @@ struct tm timeinfo;
 
 //Function declarations.
 void Score(int flashAmount);
+void TWdelay(uint32_t ms);
 
 //Setup Function
 void setup() {
@@ -50,14 +54,46 @@ void setup() {
   Serial.print("\nConnected! IP=");
   Serial.println(WiFi.localIP());
 
+  //Start WebSerial
+  WebSerial.begin(&server);
+ 
+  // Attach callback to handle incoming messages from the WebSerial client
+  WebSerial.onMessage([](uint8_t *data, size_t len) {
+    Serial.printf("Received %lu bytes from WebSerial: ", len);
+    Serial.write(data, len);
+    Serial.println();
+    WebSerial.println("Received Data...");
+    String d = "";
+    for(size_t i = 0; i < len; i++){
+      d += char(data[i]);
+    }
+    if(d == "reset"){
+      WebSerial.println("Resetting...");
+      ESP.restart();
+    } else if(d == "score"){
+      WebSerial.println("Scoring...");
+      Score(1);
+    } else if (d.toInt() > 0){
+      StreamOffset = d.toInt();
+      WebSerial.print("Stream Offset set to: ");
+      WebSerial.println(StreamOffset);
+    } else {
+      WebSerial.println("Unknown Command.");
+      WebSerial.println(d);
+    }
+  });
+ 
+  // Start AsyncWebServer
+  server.begin();
+
   //Initialize time
   configTime(UTC_OFFSET, UTC_OFFSET_DST, NTP_SERVER);
   if (!getLocalTime(&timeinfo)) {
-    Serial.println("Failed to obtain time. Restarting.");
+    WebSerial.println("Failed to obtain time. Restarting.");
     ESP.restart();
     return;
   }
-  Serial.println("Time Set!");
+  WebSerial.println("Time Set!");
   OldScore = 0;
 }
 
@@ -71,7 +107,10 @@ void loop() {
     sprintf(DateURL, "%04d-%02d-%02d", yesterday->tm_year + 1900, yesterday->tm_mon + 1, yesterday->tm_mday);
     int timeTilNextGame = timeTilGame(DateURL, Team);
     if (timeTilNextGame > 0){
-      delay(timeTilNextGame);
+      WebSerial.print("No game live. Sleeping for ");
+      WebSerial.println(timeTilNextGame);
+      //TODO: Replace Delay with non blocking delay to allow WebSerial to function while waiting for next game.
+      TWdelay(timeTilNextGame);
       return;
     }
     //If there's a game live now, find it's ID to pull the game's boxscore
@@ -79,9 +118,13 @@ void loop() {
     //Set the team's location to ensure you're watching to correct score.
     teamLocation = FindTeamLocation(Team, GameID);
     if(!GameID || !teamLocation){
-      Serial.print("Something fucked up");
+      WebSerial.print("Something fucked up");
       return;
     }
+    WebSerial.print("Game ID: ");
+    WebSerial.println(GameID);
+    WebSerial.print("Team Location: ");
+    WebSerial.println(teamLocation);
   }
   //Initialize newScore variable.
   newScore = GetScore(GameID, teamLocation);
@@ -91,35 +134,41 @@ void loop() {
   if (newScore == OldScore){
     //Delay to reduce API calls.
     delay(1000);
-    return;
   } else if(newScore > OldScore){
     //We scored. Time to react.
     String timeRemaining = GetTimeRemaning(GameID);
     delay(StreamOffset);
-    Serial.println("Score Changed!");
-    Serial.print("New Score: ");
-    Serial.println(newScore);
-    Serial.print(timeRemaining);
+    WebSerial.println("Score Changed!");
+    WebSerial.print("New Score: ");
+    WebSerial.println(newScore);
+    WebSerial.print(timeRemaining);
     Score(1);
     //Set this just in case a goal was scored, and then revoked.
     OldScore = newScore;
   }
   //If newScore is -1, then the game is over. Reset all the variables and start checking for the next game.
   if(newScore == -1){
-    Serial.println("Game Over. Resetting variables.");
+    WebSerial.println("Game Over. Resetting variables.");
     GameID = "";
     teamLocation = "";
     OldScore = 0;
     newScore = 0;
   }
+  WebSerial.loop();
 }
 
 void Score(int flashAmount){
-      for(int i = 0; i < flashAmount; i++){
-        digitalWrite(RedLED, HIGH);
-        delay(5000);
-        digitalWrite(RedLED, LOW); 
-      }
+      digitalWrite(RedLED, HIGH);
+      delay(5000);
+      digitalWrite(RedLED, LOW); 
       //TODO: Add buzzer or other notification method.
       //TODO: investigate spinning light.
+}
+
+void TWdelay(uint32_t ms) {
+  uint32_t start = millis();
+  while (millis() - start < ms) {
+    WebSerial.loop(); // Allow WebSerial to process incoming messages
+    delay(1); // Small delay to prevent blocking
+  }
 }

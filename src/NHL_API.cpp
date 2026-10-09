@@ -2,7 +2,6 @@
 #include "ESP32HTTPClient.h"
 
 ESP32HTTPClient client("https://api-web.nhle.com");
-int TimeTillNow(String startTime);
 
 int TimeTillNow(String startTime){
   struct tm gameTime;
@@ -13,10 +12,6 @@ int TimeTillNow(String startTime){
   time(&currentEpoch);
   //Calculate difference and delay.
   double secondsToGame = std::abs(difftime(gameEpoch, currentEpoch));
-  Serial.print("Sleeping for ");
-  Serial.print(secondsToGame);
-  Serial.println(" seconds until next game.");
-  // delay((secondsToGame + 60) * 1000); //Add 10 seconds buffer
   return (secondsToGame + 60) * 1000;
 }
 
@@ -35,19 +30,14 @@ int timeTilGame(String DateURL, String Team){
         .getBody("games.0.gameState", &gameState)
         .getBody("games.1.startTimeUTC", &startTime2);
   
-  Serial.println(gameState);
+  // Serial.println(gameState);
   if(gameState == "LIVE" || gameState == "CRIT"){
     return 0;
   } else if (gameState == "FINAL" || gameState == "OFF"){
-    Serial.print("Next game at: ");
-    Serial.println(startTime2);
     return TimeTillNow(startTime2);
   } else if (gameState == "FUT"){
-    Serial.print("Next game at: ");
-    Serial.println(startTime);
     return TimeTillNow(startTime);
   } else if (gameState =="PRE"){
-    Serial.println("Game in PRE. Waiting for 30 seconds.");
     return 30000;
   }
   Serial.println("Unknown game state. Retrying in 30 seconds.");
@@ -75,8 +65,6 @@ String FindTeamLocation(String Team, String GameID) {
     } else {
       teamLocation = "homeTeam";
     }
-    Serial.print("Team Location: ");
-    Serial.println(teamLocation);
     return teamLocation;
 }
 
@@ -97,7 +85,6 @@ int GetScore(String GameID, String teamLocation) {
       return homeScore ? homeScore : 0;
     }
   } else {
-    Serial.print("Game has finished.");
     return -1;
   }
 }
