@@ -9,5 +9,4 @@ String FindGameID(String DateURL, String Team);
 String FindTeamLocation(String Team, String GameID);
 int GetScore(String GameID, String teamLocation);
 String GetTimeRemaning(String GameID);
-
 #endif

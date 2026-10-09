@@ -56,11 +56,11 @@ int timeTilGame(String DateURL, String Team){
 
 //Function to find active game's ID.
 String FindGameID(String DateURL, String Team) {
-  char GameID[10];
+  String GameID;
   client.get("/v1/club-schedule/{team}/week/{date}")
         .path("team", Team)
         .path("date", DateURL)
-        .getBody("games.0.id", GameID, sizeof(GameID));
+        .getBody("games.0.id", &GameID);
   return GameID;
 }
 
