@@ -1,25 +1,31 @@
-#include <Arduino.h>
-#include <WiFi.h>
-#include <NHL_API.h>
-#include <stdio.h>
+#include <Arduino.h> //Is this needed?
+#include <stdio.h> //This is needed for sprintf to work.
 #include <time.h>
+#include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <WebSerial.h>
 
+#include <NHL_API.h>
 
 // WIFI CREDENTIALS
 const char* ssid = "Underground_AI_Data_Center";
 const char* password = "yourmomst!ts";
+
+//WebServer for WebSerial
 AsyncWebServer server(80);
 
-//Hockey Constants
+//SET YOUR TEAM HERE. Use the 3 letter abbreviation for your team based on NHL's API. Example: Colorado Avalanche = "COL" (https://github.com/Zmalski/NHL-API-Reference#team-information)
+String Team = "COL";
+
+//Variables
 String GameID, teamLocation;
-const int RedLED = 5;
 int OldScore;
 int newScore;
-String Team = "COL";
 int StreamOffset = 50000;
+
+//Pin Constants - GPIO Pin that's connected to the gate of the MOSFET.
+const int RedLED = 5;
 
 //Time Constants
 const char* NTP_SERVER = "pool.ntp.org";
@@ -29,15 +35,16 @@ struct tm timeinfo;
 
 //Function declarations.
 void Score(int flashAmount);
-void TWdelay(uint32_t ms);
+void NonBlockDelay(uint32_t ms);
+String timeResponse();
 
 //Setup Function
 void setup() {
   //Start Serial Monitor and wait a few seconds to allow connection
   Serial.begin(115200);
   pinMode(RedLED, OUTPUT);
-  delay(3000);
-
+  digitalWrite(RedLED, LOW);
+  
   //Connect to WiFi
   WiFi.begin(ssid, password, 6);
   Serial.print("Connecting to WiFi");
@@ -53,7 +60,7 @@ void setup() {
   }
   Serial.print("\nConnected! IP=");
   Serial.println(WiFi.localIP());
-
+  
   //Start WebSerial
   WebSerial.begin(&server);
  
@@ -74,26 +81,32 @@ void setup() {
       WebSerial.println("Scoring...");
       Score(1);
     } else if (d.toInt() > 0){
-      StreamOffset = d.toInt();
+      StreamOffset = d.toInt() * 1000;
       WebSerial.print("Stream Offset set to: ");
-      WebSerial.println(StreamOffset);
-    } else {
+      WebSerial.print(StreamOffset/1000);
+      WebSerial.println(" seconds.");
+    } else if (d == "time"){
+      WebSerial.println(timeResponse());
+    }
+    
+    else {
       WebSerial.println("Unknown Command.");
       WebSerial.println(d);
     }
   });
- 
+  
   // Start AsyncWebServer
   server.begin();
-
+  delay(3000);
+  
   //Initialize time
   configTime(UTC_OFFSET, UTC_OFFSET_DST, NTP_SERVER);
   if (!getLocalTime(&timeinfo)) {
-    WebSerial.println("Failed to obtain time. Restarting.");
+    Serial.println("Failed to obtain time. Restarting.");
     ESP.restart();
     return;
   }
-  WebSerial.println("Time Set!");
+  Serial.println("Time Set!");
   OldScore = 0;
 }
 
@@ -110,7 +123,7 @@ void loop() {
       WebSerial.print("No game live. Sleeping for ");
       WebSerial.println(timeTilNextGame);
       //TODO: Replace Delay with non blocking delay to allow WebSerial to function while waiting for next game.
-      TWdelay(timeTilNextGame);
+      NonBlockDelay(timeTilNextGame);
       return;
     }
     //If there's a game live now, find it's ID to pull the game's boxscore
@@ -126,9 +139,6 @@ void loop() {
     WebSerial.print("Team Location: ");
     WebSerial.println(teamLocation);
   }
-  //Initialize newScore variable.
-  newScore = GetScore(GameID, teamLocation);
-  
   //If GameID is set, then the game is live and we can watch the score. TODO: Remove While loop
   newScore = GetScore(GameID, teamLocation);
   if (newScore == OldScore){
@@ -136,8 +146,8 @@ void loop() {
     delay(1000);
   } else if(newScore > OldScore){
     //We scored. Time to react.
-    String timeRemaining = GetTimeRemaning(GameID);
-    delay(StreamOffset);
+    String timeRemaining = GetTimeRemaining(GameID);
+    NonBlockDelay(StreamOffset);
     WebSerial.println("Score Changed!");
     WebSerial.print("New Score: ");
     WebSerial.println(newScore);
@@ -159,16 +169,25 @@ void loop() {
 
 void Score(int flashAmount){
       digitalWrite(RedLED, HIGH);
-      delay(5000);
+      NonBlockDelay(5000);
       digitalWrite(RedLED, LOW); 
       //TODO: Add buzzer or other notification method.
       //TODO: investigate spinning light.
 }
 
-void TWdelay(uint32_t ms) {
+void NonBlockDelay(uint32_t ms) {
   uint32_t start = millis();
   while (millis() - start < ms) {
     WebSerial.loop(); // Allow WebSerial to process incoming messages
     delay(1); // Small delay to prevent blocking
+  }
+}
+
+String timeResponse(){
+  if (GameID != ""){
+    String timeRemaining = GetTimeRemaining(GameID);
+    return timeRemaining;
+  } else {
+    return "No game live.";
   }
 }

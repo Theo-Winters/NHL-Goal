@@ -89,11 +89,8 @@ int GetScore(String GameID, String teamLocation) {
   }
 }
 
-
-//TODO: Split this into two functions, one for time and another for period number. Also include handling / displaying if intermission
 //Parses boxscore api to pull out the time remaining and period as a string.
-//  String result = checkGameStats();
-String GetTimeRemaning(String GameID) {
+String GetTimeRemaining(String GameID) {
   String timeRemaining;
   String currentPeriod;
   String gameState;
