@@ -3,11 +3,16 @@
 #include <NHL_API.h>
 #include <stdio.h>
 #include <time.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include <WebSerial.h>
+
 
 // WIFI CREDENTIALS
 const char* ssid = "Underground_AI_Data_Center";
 const char* password = "yourmomst!ts";
 
+AsyncWebServer server(80);
 
 //Hockey Constants
 String GameID, teamLocation;
@@ -48,6 +53,24 @@ void setup() {
   Serial.print("\nConnected! IP=");
   Serial.println(WiFi.localIP());
 
+  WebSerial.begin(&server);
+ 
+  // Attach callback to handle incoming messages from the WebSerial client
+  WebSerial.onMessage([](uint8_t *data, size_t len) {
+    Serial.printf("Received %lu bytes from WebSerial: ", len);
+    Serial.write(data, len);
+    Serial.println();
+    WebSerial.println("Received Data...");
+    String d = "";
+    for(size_t i = 0; i < len; i++){
+      d += char(data[i]);
+    }
+    WebSerial.println(d);
+  });
+ 
+  // Start AsyncWebServer
+  server.begin();
+
   //Initialize time
   configTime(UTC_OFFSET, UTC_OFFSET_DST, NTP_SERVER);
   if (!getLocalTime(&timeinfo)) {
@@ -60,6 +83,7 @@ void setup() {
 }
 
 void loop() {
+  WebSerial.loop();
   //Check the schedule for the week, passing along today's date to prevent dealing with redirecting.
   time_t raw_time = mktime(&timeinfo);
   raw_time -= 86400; 
