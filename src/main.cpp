@@ -12,9 +12,6 @@
 //WebServer for WebSerial
 AsyncWebServer server(80);
 
-//SET YOUR TEAM HERE. Use the 3 letter abbreviation for your team based on NHL's API. Example: Colorado Avalanche = "COL" (https://github.com/Zmalski/NHL-API-Reference#team-information)
-String Team = "COL";
-
 //Variables
 String GameID, teamLocation;
 int OldScore;
@@ -115,7 +112,7 @@ void loop() {
     struct tm *yesterday = localtime(&raw_time);
     char DateURL[11];
     sprintf(DateURL, "%04d-%02d-%02d", yesterday->tm_year + 1900, yesterday->tm_mon + 1, yesterday->tm_mday);
-    int timeTilNextGame = timeTilGame(DateURL, Team);
+    int timeTilNextGame = timeTilGame(DateURL, NHLTEAM);
     if (timeTilNextGame > 0){
       WebSerial.print("No game live. Sleeping for ");
       WebSerial.println(timeTilNextGame);
@@ -124,9 +121,9 @@ void loop() {
       return;
     }
     //If there's a game live now, find it's ID to pull the game's boxscore
-    GameID = FindGameID(DateURL, Team);
+    GameID = FindGameID(DateURL, NHLTEAM);
     //Set the team's location to ensure you're watching to correct score.
-    teamLocation = FindTeamLocation(Team, GameID);
+    teamLocation = FindTeamLocation(NHLTEAM, GameID);
     if(!GameID || !teamLocation){
       WebSerial.print("Something fucked up");
       return;
