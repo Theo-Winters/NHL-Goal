@@ -7,14 +7,7 @@
 #include <WebSerial.h>
 
 #include <NHL_API.h>
-<<<<<<< Updated upstream
-
-// WIFI CREDENTIALS
-const char* ssid = "Underground_AI_Data_Center";
-const char* password = "yourmomst!ts";
-=======
 #include "secrets.h"
->>>>>>> Stashed changes
 
 //WebServer for WebSerial
 AsyncWebServer server(80);
