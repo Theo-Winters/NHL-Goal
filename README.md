@@ -7,6 +7,10 @@ Budweiser Red light - https://redlights-dev-us.myshopify.com/
 $10 spinning light - https://www.amazon.com/dp/B0CZ8H3RSD?ref=ppx_yo2ov_dt_b_fed_asin_title&th=1
 
 ---
+<img width="492" height="426" alt="image" src="https://github.com/user-attachments/assets/7587633b-6934-404d-ae36-75efa1c2d704" />
+
+
+---
 ## Wi-Fi setup
 
 Copy `src/secrets.example.h` to `src/secrets.h` and replace the example values with your Wi-Fi network name and password. `src/secrets.h` is excluded by `.gitignore`; keep it local and do not force-add it to Git.
