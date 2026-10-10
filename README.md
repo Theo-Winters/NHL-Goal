@@ -13,9 +13,7 @@ $10 spinning light - https://www.amazon.com/dp/B0CZ8H3RSD?ref=ppx_yo2ov_dt_b_fed
 ---
 ## Wi-Fi setup
 
-Copy `src/secrets.example.h` to `src/secrets.h` and replace the example values with your Wi-Fi network name and password. `src/secrets.h` is excluded by `.gitignore`; keep it local and do not force-add it to Git.
-
-If real credentials were already pushed to GitHub, change the Wi-Fi password. Removing them in a later commit does not remove them from Git history.
+Copy `src/secrets.example.h` to `src/secrets.h` and replace the example values with your Wi-Fi network name and password as well as your NHL team. `src/secrets.h` is excluded by `.gitignore`; keep it local and do not force-add it to Git.
 
 ---
 ## TODO:
