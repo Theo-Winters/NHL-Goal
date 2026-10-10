@@ -19,7 +19,7 @@ If real credentials were already pushed to GitHub, change the Wi-Fi password. Re
 
 ---
 ## TODO:
-- [ ] Add website for changing configurations.
-- [ ] Add delay after score is noticed and before it reacts in case there's a stream delay.
+- [x] Add website for changing configurations. Added WebSerial
+- [x] Add delay after score is noticed and before it reacts in case there's a stream delay.
 - [ ] Add more functions to easily add a screen. (ie. get player who scored the goal.)
 - [ ] Update the GetTimeRemaining to be two seperate functions for period number and time remaining.
