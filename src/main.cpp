@@ -1,12 +1,16 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <NHL_API.h>
+<<<<<<< Updated upstream
 
 
 
 // WIFI CREDENTIALS
 const char* ssid = "Underground_AI_Data_Center";
 const char* password = "yourmomst!ts";
+=======
+#include "secrets.h"
+>>>>>>> Stashed changes
 
 //Hockey Constants
 String GameID, teamLocation;
@@ -34,7 +38,7 @@ void setup() {
   delay(3000);
 
   //Connect to WiFi
-  WiFi.begin(ssid, password, 6);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD, 6);
   Serial.print("Connecting to WiFi");
   while (WiFi.status() != WL_CONNECTED) {
     delay(100);
