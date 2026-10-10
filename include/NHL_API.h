@@ -3,12 +3,10 @@
 #include <Arduino.h>
 
 
-String checkSchedule(String DateURL, String Team);
-int timeTilGame(String result);
-String FindGameID(String result);
-String FindTeamLocation(String result, String Team);
-String checkGameStats(String GameID);
-int GetScore(String result, String teamLocation);
-String GetTimeRemaning(String result);
-
+int timeTilGame(String DateURL, String Team);
+int TimeTillNow(String startTime);
+String FindGameID(String DateURL, String Team);
+String FindTeamLocation(String Team, String GameID);
+int GetScore(String GameID, String teamLocation);
+String GetTimeRemaining(String GameID);
 #endif
