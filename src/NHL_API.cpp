@@ -78,15 +78,20 @@ int GetScore(String GameID, String teamLocation) {
         .getBody("homeTeam.score", &homeScore)
         .getBody("awayTeam.score", &awayScore)
         .getBody("gameState", &gameState);
-  if(gameState != "FINAL"){
-    if(teamLocation == "awayTeam"){
-      return awayScore ? awayScore : 0;
+  //Ensure no errors, and that the score is correctly pulled based on the team location.
+  int code = client.getStatusCode();
+  if (code == 200) {
+    if(gameState != "FINAL"){
+      if(teamLocation == "awayTeam"){
+        return awayScore ? awayScore : 0;
+      } else {
+        return homeScore ? homeScore : 0;
+      }
     } else {
-      return homeScore ? homeScore : 0;
+      return -1;
     }
-  } else {
-    return -1;
   }
+  return;
 }
 
 //Parses boxscore api to pull out the time remaining and period as a string.
@@ -100,8 +105,11 @@ String GetTimeRemaining(String GameID) {
         .getBody("periodDescriptor.number", &currentPeriod)
         .getBody("gameState", &gameState);
   if(gameState != "FINAL"){
-    return "Period " + currentPeriod + "\n Time Remaining: " + timeRemaining;
+    return "Period " + currentPeriod + "\n Time Remaining: " + timeRemaining; //FIX THIS
   } else {
     return "Game finished";
   }
 }
+
+//Get Latest play from "/v1/gamecenter/{GameID}/play-by-play" 
+//typecode 505 is a goal then get scoringPlayerId and use that to get player name.
